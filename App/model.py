@@ -1,5 +1,5 @@
 ﻿"""
- * Copyright 2020, Departamento de sistemas y Computación,
+ * Copyright 2020, Departamento de sistemas y Computación
  * Universidad de Los Andes
  *
  *
@@ -17,139 +17,343 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along withthis program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Contribución de:
+ *
+ * Dario Correal
+ *
  """
-
-import tracemalloc
-import config as cf
-import model
-import csv
-import time
-import tracemalloc
-
-csv.field_size_limit(2147483647)
+import config
+from DISClib.ADT import graph as gr
+from DISClib.ADT import map as m
+from DISClib.ADT import list as lt
+from DISClib.Algorithms.Graphs import scc
+from DISClib.Algorithms.Graphs import dijsktra as djk
+from DISClib.Algorithms.Graphs import dfs
+from DISClib.Algorithms.Graphs import bfs
+from DISClib.Utils import error as error
+assert config
 
 """
-El controlador se encarga de mediar entre la vista y el modelo.
+En este archivo definimos los TADs que vamos a usar y las operaciones
+de creacion y consulta sobre las estructuras de datos.
 """
 
-# Inicialización del Catálogo de juegos
+# -----------------------------------------------------
+#                       API
+# -----------------------------------------------------
 
-def newController():
+
+def newAnalyzer():
+    """ Inicializa el analizador
+
+   stops: Tabla de hash para guardar los vertices del grafo
+   connections: Grafo para representar las rutas entre estaciones
+   components: Almacena la informacion de los componentes conectados
+   paths: Estructura que almancena los caminos de costo minimo desde un
+           vertice determinado a todos los otros vértices del grafo
     """
-    Crea una instancia del modelo
-    """
-    control = {
-        'model': None
-    }
-    control['model'] = model.newCatalog()
-    return control
-
-
-# Funciones para la carga de datos
-
-def loadData(control,archiv, memory = False):
-    start_time = getTime()
-    if memory:
-        tracemalloc.start()
-        start_memory = getMemory()
-
-    catalog = control['model']
-    juegos= loadJuegos(catalog,archiv)
-    record = loadRecords(catalog,archiv)
-    loadPaises(catalog)
-
-    stop_time = getTime()
-    delta_time = deltaTime(stop_time, start_time)
-    if memory:
-        stop_memory = getMemory()
-        tracemalloc.stop()
-        stop_time = getTime()
-        delta_memory = deltaMemory(stop_memory, start_memory)
-        return juegos, record, delta_time, delta_memory
-
-    else:
-        return juegos, record, delta_time,None
-
-def loadJuegos(catalog,archiv):
-    booksfile = cf.data_dir + 'game_data_utf-8-'+archiv
-    input_file = csv.DictReader(open(booksfile, encoding='utf-8'))
-    for juego in input_file:
-        model.addJuego(catalog, juego)
-    return catalog['juegos']
-
-def loadRecords(catalog,archiv):
-    booksfile = cf.data_dir + 'category_data_utf-8-'+archiv
-    input_file = csv.DictReader(open(booksfile, encoding='utf-8'))
-    for juego in input_file:
-        model.addRecord(catalog, juego,juego['Game_Id'])
-    return catalog['records']
-
-def loadPaises(catalog):
-    booksfile = cf.data_dir + 'paises_2016_geom_10.csv'
-    input_file = csv.DictReader(open(booksfile, encoding='utf-8'))
-    for juego in input_file:
-        model.addPais(catalog, juego)
+    try:
     
 
-# Funciones de consulta sobre el catálogo
+        analyzer = {
+            'stops': None,
+            'connections': None,
+            'components': None,
+            'paths': None,
+            'search': None
+            
+        }
 
-def getReq1():
-    pass
+        
+        analyzer['stops'] = m.newMap(numelements=14000,
+                                     maptype='PROBING',
+                                     comparefunction=compareStopIds)
 
-def getReq2():
-    pass
+        analyzer['connections'] = gr.newGraph(datastructure='ADJ_LIST',
+                                              directed=True,
+                                              size=14000,
+                                              comparefunction=compareStopIds)
+        return analyzer
+    except Exception as exp:
+        error.reraise(exp, 'model:newAnalyzer')
 
-def getReq3():
-    pass
 
-def getReq4():
-    pass
+# Funciones para agregar informacion al grafo
 
-def getReq5():
-    pass
-
-def getReq6():
-    pass
-
-def getReq7():
-    pass
-
-def getReq8():
-    pass
-
-# Funciones de tiempo
-
-def getTime():
+def addStopConnection(analyzer, lastservice, service):
     """
-    devuelve el instante tiempo de procesamiento en milisegundos
-    """
-    return float(time.perf_counter()*1000)
+    Adiciona las estaciones al grafo como vertices y arcos entre las
+    estaciones adyacentes.
 
-def deltaTime(end, start):
-    """
-    devuelve la diferencia entre tiempos de procesamiento muestreados
-    """
-    elapsed = float(end - start)
-    return elapsed
+    Los vertices tienen por nombre el identificador de la estacion
+    seguido de la ruta que sirve.  Por ejemplo:
 
-def getMemory():
-    """
-    toma una muestra de la memoria alocada en instante de tiempo
-    """
-    return tracemalloc.take_snapshot()
+    75009-10
 
-def deltaMemory(stop_memory, start_memory):
+    Si la estacion sirve otra ruta, se tiene: 75009-101
     """
-    calcula la diferencia en memoria alocada del programa entre dos
-    instantes de tiempo y devuelve el resultado en bytes (ej.: 2100.0 B)
-    """
-    memory_diff = stop_memory.compare_to(start_memory, "filename")
-    delta_memory = 0.0
+    try:
+        origin = formatVertex(lastservice)
+        destination = formatVertex(service)
+        cleanServiceDistance(lastservice, service)
+        distance = float(service['Distance']) - float(lastservice['Distance'])
+        distance = abs(distance)
+        addStop(analyzer, origin)
+        addStop(analyzer, destination)
+        addConnection(analyzer, origin, destination, distance)
+        addRouteStop(analyzer, service)
+        addRouteStop(analyzer, lastservice)
+        return analyzer
+    except Exception as exp:
+        error.reraise(exp, 'model:addStopConnection')
 
-    # suma de las diferencias en uso de memoria
-    for stat in memory_diff:
-        delta_memory = delta_memory + stat.size_diff
-    # de Byte -> kByte
-    delta_memory = delta_memory/1024.0
-    return delta_memory
+
+def addStop(analyzer, stopid):
+    """
+    Adiciona una estación como un vertice del grafo
+    """
+    try:
+        if not gr.containsVertex(analyzer['connections'], stopid):
+            gr.insertVertex(analyzer['connections'], stopid)
+        return analyzer
+    except Exception as exp:
+        error.reraise(exp, 'model:addstop')
+
+
+def addRouteStop(analyzer, service):
+    """
+    Agrega a una estacion, una ruta que es servida en ese paradero
+    """
+    entry = m.get(analyzer['stops'], service['BusStopCode'])
+    if entry is None:
+        lstroutes = lt.newList(cmpfunction=compareroutes)
+        lt.addLast(lstroutes, service['ServiceNo'])
+        m.put(analyzer['stops'], service['BusStopCode'], lstroutes)
+    else:
+        lstroutes = entry['value']
+        info = service['ServiceNo']
+        if not lt.isPresent(lstroutes, info):
+            lt.addLast(lstroutes, info)
+    return analyzer
+
+
+def addRouteConnections(analyzer):
+    """
+    Por cada vertice (cada estacion) se recorre la lista
+    de rutas servidas en dicha estación y se crean
+    arcos entre ellas para representar el cambio de ruta
+    que se puede realizar en una estación.
+    """
+    lststops = m.keySet(analyzer['stops'])
+    for key in lt.iterator(lststops):
+        lstroutes = m.get(analyzer['stops'], key)['value']
+        prevrout = None
+        for route in lt.iterator(lstroutes):
+            route = key + '-' + route
+            if prevrout is not None:
+                addConnection(analyzer, prevrout, route, 0)
+                addConnection(analyzer, route, prevrout, 0)
+            prevrout = route
+
+
+def addConnection(analyzer, origin, destination, distance):
+    """
+    Adiciona un arco entre dos estaciones
+    """
+    edge = gr.getEdge(analyzer['connections'], origin, destination)
+    if edge is None:
+        gr.addEdge(analyzer['connections'], origin, destination, distance)
+    return analyzer
+
+# ==============================
+# Funciones de consulta
+# ==============================
+
+
+def connectedComponents(analyzer):
+    """
+    Calcula los componentes conectados del grafo
+    Se utiliza el algoritmo de Kosaraju
+    """
+    analyzer['components'] = scc.KosarajuSCC(analyzer['connections'])
+    return scc.connectedComponents(analyzer['components'])
+
+
+def minimumCostPaths(analyzer, initialStation):
+    """
+    Calcula los caminos de costo mínimo desde la estacion initialStation
+    a todos los demas vertices del grafo
+    """
+    analyzer['paths'] = djk.Dijkstra(analyzer['connections'], initialStation)
+    return analyzer
+
+
+def hasPath(analyzer, destStation):
+    """
+    Indica si existe un camino desde la estacion inicial a la estación destino
+    Se debe ejecutar primero la funcion minimumCostPaths
+    """
+   
+    return djk.hasPathTo(analyzer['paths'], destStation)
+
+
+def minimumCostPath(analyzer, destStation):
+    """
+    Retorna el camino de costo minimo entre la estacion de inicio
+    y la estacion destino
+    Se debe ejecutar primero la funcion minimumCostPaths
+    """
+    path = djk.pathTo(analyzer['paths'], destStation)
+    return path
+
+
+def searchPaths(analyzer, initialStation, method):
+    """
+    searchPaths Calcula los caminos posibles desde una estacion de origen
+    y puede utilizar los algoritmos "dfs" o "bfs"
+
+    Args:
+        analyzer (dict): diccionario con las estructuras de datos del modelo
+        originStation (vertice): estacion de origen del recorrido
+        method (str, optional): algoritmo de busqueda. Por defecto es "dfs"
+
+    Returns:
+        dict: devuelve el analyzer del modelo
+    """
+   
+    if method == "dfs":
+        analyzer["search"]=dfs.DepthFirstSearch(analyzer["connections"], initialStation)
+        
+    elif method == "bfs":
+        analyzer["search"]=bfs.BreadhtFisrtSearch(analyzer["connections"], initialStation)
+    return analyzer
+
+
+def hasSearchPath(analyzer, destStation, method):
+    """
+    hasSearchPath indica si existe un camino desde la estacion inicial a
+    la estación destino. Se debe ejecutar primero la funcion searchPaths()
+
+    Args:
+        analyzer (dict): diccionario con las estructuras de datos del modelo
+        destStation (vertice): estacion de destino para el recorrido
+        method (str, optional): algoritmo de busqueda. Por defecto es "dfs"
+    """
+   
+    if method == "dfs":
+        print(destStation)
+        x=dfs.hasPathTo(analyzer['search'], destStation)
+        return x
+    elif method == "bfs":
+        x= bfs.hasPathTo(analyzer['search'], destStation)
+        return x
+
+def searchPathTo(analyzer, destStation, method):
+    """
+    searchPath retorna el camino de encontrado entre la estacion de inicio
+    y la estacion destino Se debe ejecutar primero la funcion searchPaths
+
+    Args:
+        analyzer (dict): diccionario con las estructuras de datos del modelo
+        destStation (vertice): estacion de destino para el recorrido
+        method (str, optional): algoritmo de busqueda. Por defecto es "dfs"
+
+    Returns:
+        stack: devuele una pila con el camino encontrado en la busqueda.
+    """
+    path = None
+    
+    if method == "dfs":
+        path= dfs.pathTo(analyzer['search'],destStation)
+    
+    elif method == "bfs":
+        path= bfs.pathTo(analyzer['search'],destStation)
+    return path
+
+
+def totalStops(analyzer):
+    """
+    Retorna el total de estaciones (vertices) del grafo
+    """
+    return gr.numVertices(analyzer['connections'])
+
+
+def totalConnections(analyzer):
+    """
+    Retorna el total arcos del grafo
+    """
+    return gr.numEdges(analyzer['connections'])
+
+
+def servedRoutes(analyzer):
+    """
+    Retorna la estación que sirve a mas rutas.
+    Si existen varias rutas con el mismo numero se
+    retorna una de ellas
+    """
+    lstvert = m.keySet(analyzer['stops'])
+    maxvert = None
+    maxdeg = 0
+    for vert in lt.iterator(lstvert):
+        lstroutes = m.get(analyzer['stops'], vert)['value']
+        degree = lt.size(lstroutes)
+        if(degree > maxdeg):
+            maxvert = vert
+            maxdeg = degree
+    return maxvert, maxdeg
+
+
+# ==============================
+# Funciones Helper
+# ==============================
+
+def cleanServiceDistance(lastservice, service):
+    """
+    En caso de que el archivo tenga un espacio en la
+    distancia, se reemplaza con cero.
+    """
+    if service['Distance'] == '':
+        service['Distance'] = 0
+    if lastservice['Distance'] == '':
+        lastservice['Distance'] = 0
+
+
+def formatVertex(service):
+    """
+    Se formatea el nombrer del vertice con el id de la estación
+    seguido de la ruta.
+    """
+    name = service['BusStopCode'] + '-'
+    name = name + service['ServiceNo']
+    return name
+
+
+# ==============================
+# Funciones de Comparacion
+# ==============================
+
+
+def compareStopIds(stop, keyvaluestop):
+    """
+    Compara dos estaciones
+    """
+    stopcode = keyvaluestop['key']
+    if (stop == stopcode):
+        return 0
+    elif (stop > stopcode):
+        return 1
+    else:
+        return -1
+
+
+def compareroutes(route1, route2):
+    """
+    Compara dos rutas
+    """
+    if (route1 == route2):
+        return 0
+    elif (route1 > route2):
+        return 1
+    else:
+        return -1
