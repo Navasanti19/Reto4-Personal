@@ -85,21 +85,15 @@ def playLoadData():
     
     resp=input(('\nDesea Conocer la memoria utilizada? '))
     resp=castBoolean(resp)
-    juegos,records,time,memory= loadData(catalog,archiv,resp)
+    vertices,arcos,time,memory= loadData(catalog,archiv,resp)
+    
     os.system('cls')
     print('----------------------------------')
-    print('Loaded speedruning data properties: ')
-    print('Total loaded games: '+str(lt.size(juegos)))
-    print('Total loaded speedruns: '+str(lt.size(records)))
+    print('Loaded Barcelona Transit data properties: ')
+    print('Total loaded Vertex: '+str(vertices))
+    print('Total loaded Connection: '+str(arcos))
     print('----------------------------------')
     
-    print('\n------ Game Content ------')   
-    head=['Game_Id','Release_Date',"Name",'Abbreviation','Platforms','Total_Runs','Genres']
-    #printMoviesCant(juegos,3,head)
-    
-    print('\n------ SpeedRuns Content ------')   
-    head=['Game_Id','Record_Date_0','Num_Runs',"Name",'Category','Subcategory','Country_0','Players_0','Time_0']
-    #printMoviesCant(records,3,head)
     print(f'Tiempo de ejecución: {time:.3f}')
     print(f'Memoria Utilizada: {memory}\n')
 
@@ -147,7 +141,8 @@ while True:
     if int(inputs[0]) == 0:
         print("Cargando información de los archivos ....")
         catalog = newController()
-        playLoadData() 
+        playLoadData()
+        
     elif int(inputs[0])==1:
         playReq1()
     elif int(inputs[0])==2:

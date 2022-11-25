@@ -26,6 +26,10 @@ import model
 import csv
 import time
 import tracemalloc
+import networkx as nx
+import graphviz
+import matplotlib.pyplot as plt
+
 
 csv.field_size_limit(2147483647)
 
@@ -55,10 +59,14 @@ def loadData(control,archiv, memory = False):
         start_memory = getMemory()
 
     catalog = control['model']
-    juegos= loadJuegos(catalog,archiv)
-    record = loadRecords(catalog,archiv)
-    loadPaises(catalog)
+    loadEstaciones(catalog,archiv)
+    loadRutas(catalog,archiv)
+    
+    model.addTransbordo(catalog)
 
+    vertices=model.totalStops(catalog)
+    arcos=model.totalConnections(catalog)
+    
     stop_time = getTime()
     delta_time = deltaTime(stop_time, start_time)
     if memory:
@@ -66,33 +74,30 @@ def loadData(control,archiv, memory = False):
         tracemalloc.stop()
         stop_time = getTime()
         delta_memory = deltaMemory(stop_memory, start_memory)
-        return juegos, record, delta_time, delta_memory
+        return vertices, arcos, delta_time, delta_memory
 
     else:
-        return juegos, record, delta_time,None
+        return vertices, arcos, delta_time,None
 
-def loadJuegos(catalog,archiv):
-    booksfile = cf.data_dir + 'game_data_utf-8-'+archiv
+def loadEstaciones(catalog,archiv):
+    booksfile = cf.data_dir + 'bus_stops_bcn-utf8-'+archiv
     input_file = csv.DictReader(open(booksfile, encoding='utf-8'))
     for juego in input_file:
-        model.addJuego(catalog, juego)
-    return catalog['juegos']
+        model.addVertice(catalog, juego)
+    return catalog['vertices']
 
-def loadRecords(catalog,archiv):
-    booksfile = cf.data_dir + 'category_data_utf-8-'+archiv
+def loadRutas(catalog,archiv):
+    booksfile = cf.data_dir + 'bus_edges_bcn-utf8-'+archiv
     input_file = csv.DictReader(open(booksfile, encoding='utf-8'))
     for juego in input_file:
-        model.addRecord(catalog, juego,juego['Game_Id'])
-    return catalog['records']
+        model.addArco(catalog, juego)
+    return catalog['arcos']
 
-def loadPaises(catalog):
-    booksfile = cf.data_dir + 'paises_2016_geom_10.csv'
-    input_file = csv.DictReader(open(booksfile, encoding='utf-8'))
-    for juego in input_file:
-        model.addPais(catalog, juego)
     
 
 # Funciones de consulta sobre el catálogo
+
+
 
 def getReq1():
     pass
