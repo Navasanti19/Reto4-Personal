@@ -64,13 +64,10 @@ def newCatalog():
         
 
         catalog = {
-            'stops': None,
             'connections': None,
             'components': None,
             'paths': None,
             'search': None,
-            'G':None
-            
         }
         catalog['G'] = nx.Graph()
         catalog['vertices']=lt.newList('ARRAY_LIST',None)
@@ -121,18 +118,23 @@ def addArco(analyzer, arco):
     return analyzer
 
 def addTransbordo(analyzer):
+    cont=0
     for i in lt.iterator(analyzer['transbordo']):
         vertex='T-'+i['Code']
         vertex2=formatVertex(i)
         if gr.containsVertex(analyzer['grafo'],vertex):
             addConnection(analyzer,vertex,vertex2,0)
+            addConnection(analyzer,vertex2,vertex,0)
         else:
             addStop(analyzer,vertex)
             addConnection(analyzer,vertex,vertex2,0)
+            addConnection(analyzer,vertex2,vertex,0)
+            cont+=1
     
     #nx.draw_networkx(analyzer['G'])
     #plt.show()
-    return analyzer['G']
+
+    return cont
 
 def addStop(analyzer, stopid):
     """
@@ -140,7 +142,7 @@ def addStop(analyzer, stopid):
     """
     try:
         if not gr.containsVertex(analyzer['grafo'], stopid):
-            #analyzer['G'].add_node(stopid)
+            analyzer['G'].add_node(stopid)
             gr.insertVertex(analyzer['grafo'], stopid)
         return analyzer
     except Exception as exp:
@@ -152,7 +154,7 @@ def addConnection(analyzer, origin, destination, distance):
     """
     edge = gr.getEdge(analyzer['grafo'], origin, destination)
     if edge is None:
-        #analyzer['G'].add_edge(origin, destination)
+        analyzer['G'].add_edge(origin, destination)
         gr.addEdge(analyzer['grafo'], origin, destination, distance)
     return analyzer
 
@@ -166,7 +168,6 @@ def totalStops(analyzer):
     """
     return gr.numVertices(analyzer['grafo'])
 
-
 def totalConnections(analyzer):
     """
     Retorna el total arcos del grafo
@@ -174,17 +175,150 @@ def totalConnections(analyzer):
     return gr.numEdges(analyzer['grafo'])
 
 
-def getReq1():
-    pass
+def getReq1(analyzer,ini,dest):
+    G=nx.Graph()
+    cont_trans=0
+    dist_total=0
+    dict_edges={}
+    analyzer["search"]=bfs.BreadhtFisrtSearch(analyzer["grafo"], ini)
+    exist= bfs.hasPathTo(analyzer['search'], dest)
+    path_new=lt.newList('ARRAY_LIST')
+    if exist:
+        path= bfs.pathTo(analyzer['search'],dest)
 
-def getReq2 ():
-    pass
+        for i in range(1,lt.size(path)):
+            if not G.has_node(lt.getElement(path,i)):
+                G.add_node(lt.getElement(path,i))
+                G.add_node(lt.getElement(path,i+1))
+            else:
+                G.add_node(lt.getElement(path,i+1))
+            
+            if 'T-' in lt.getElement(path,i):
+                cont_trans+=1
 
-def getReq3():
-    pass
+            dist=gr.getEdge(analyzer['grafo'],lt.getElement(path,i),lt.getElement(path,i+1))['weight']
+            dict_edges[(lt.getElement(path,i),lt.getElement(path,i+1))]=round(dist,2)
+            G.add_edge(lt.getElement(path,i),lt.getElement(path,i+1))
+            dist_total+=dist
+            lt.addFirst(path_new,[lt.getElement(path,i+1),dist])
+        lt.addLast(path_new,[lt.getElement(path,1),0])
+        
+        return True, dist_total, lt.size(path), cont_trans, path_new,G,dict_edges
+    else:
+        return False,0, 0, 0, 0,0,0
 
-def getReq4():
-    pass
+def getReq2 (analyzer,ini,dest):
+    G=nx.Graph()
+    cont_trans=0
+    dist_total=0
+    dict_edges={}
+    analyzer["search"]=dfs.DepthFirstSearch(analyzer["grafo"], ini)
+    exist= dfs.hasPathTo(analyzer['search'], dest)
+    path_new=lt.newList('ARRAY_LIST')
+    if exist:
+        path= dfs.pathTo(analyzer['search'],dest)
+
+        for i in range(1,lt.size(path)):
+            if not G.has_node(lt.getElement(path,i)):
+                G.add_node(lt.getElement(path,i))
+                G.add_node(lt.getElement(path,i+1))
+            else:
+                G.add_node(lt.getElement(path,i+1))
+            
+            if 'T-' in lt.getElement(path,i):
+                cont_trans+=1
+
+            dist=gr.getEdge(analyzer['grafo'],lt.getElement(path,i),lt.getElement(path,i+1))['weight']
+            dict_edges[(lt.getElement(path,i),lt.getElement(path,i+1))]=round(dist,2)
+            G.add_edge(lt.getElement(path,i),lt.getElement(path,i+1))
+            dist_total+=dist
+            lt.addFirst(path_new,[lt.getElement(path,i+1),dist])
+        lt.addLast(path_new,[lt.getElement(path,1),0])
+        
+        return True, dist_total, lt.size(path), cont_trans, path_new,G,dict_edges
+    else:
+        return False,0, 0, 0, 0,0,0
+
+def getReq3(analyzer):
+    analyzer['components'] = scc.KosarajuSCC(analyzer['grafo'])
+    cant_conectados=scc.connectedComponents(analyzer['components'])
+    mapa_vertices= analyzer['components']['idscc']
+    mapa_componentes={}
+    for i in lt.iterator(analyzer['vertices']):
+        try:
+            componente=mp.get(mapa_vertices,formatVertex(i))
+            componente=me.getValue(componente)
+            
+            if componente in mapa_componentes:
+                lista_vertex=mapa_componentes[componente]
+            else:
+                lista_vertex={'lista_vertex':lt.newList('ARRAY_LIST'), 'count':0}
+                mapa_componentes[componente]=lista_vertex
+            lt.addLast(lista_vertex['lista_vertex'],formatVertex(i))
+            lista_vertex['count']+=1
+        except:
+            pass
+    
+    for i in mapa_componentes:
+        mer.sort(mapa_componentes[i]['lista_vertex'],cmpByCode)
+        pass    
+    mapa_componentes=sorted(mapa_componentes.items(), key=lambda x:x[1]['count'], reverse=True)
+    mapa_componentes=dict(mapa_componentes)
+    
+    return cant_conectados, mapa_componentes
+
+def getReq4(analyzer,lon_ini,lat_ini, lon_dest,lat_dest):
+    G=nx.Graph()
+    cont_trans=0
+    dist_total=0
+    dict_edges={}
+    
+    ini=''
+    dist_menor_ini=9999999999
+    for i in lt.iterator(analyzer['vertices']):
+        dist_est=haversine(lon_ini,lat_ini,float(i['Longitude']),float(i['Latitude']))
+        if dist_est<dist_menor_ini:
+            dist_menor_ini=dist_est
+            ini=formatVertex(i)
+        if dist_menor_ini==0:
+            break
+    
+    dest=''
+    dist_menor_dest=999999999
+    for i in lt.iterator(analyzer['vertices']):
+        dist_est=haversine(lon_dest,lat_dest,float(i['Longitude']),float(i['Latitude']))
+        if dist_est<dist_menor_dest:
+            dist_menor_dest=dist_est
+            dest=formatVertex(i)
+        if dist_menor_dest==0:
+            break
+    
+    analyzer['search']=djk.Dijkstra(analyzer['grafo'],ini)
+    exist= djk.hasPathTo(analyzer['search'], dest)
+    path_new=lt.newList('ARRAY_LIST')
+    if exist:
+        path= djk.pathTo(analyzer['search'],dest)
+
+        for i in range(1,lt.size(path)+1):
+            if not G.has_node(lt.getElement(path,i)['vertexA']):
+                G.add_node(lt.getElement(path,i)['vertexA'])
+                G.add_node(lt.getElement(path,i)['vertexB'])
+            else:
+                G.add_node(lt.getElement(path,i)['vertexB'])
+            
+            if 'T-' in lt.getElement(path,i)['vertexA']:
+                cont_trans+=1
+
+            dist=gr.getEdge(analyzer['grafo'],lt.getElement(path,i)['vertexA'],lt.getElement(path,i)['vertexB'])['weight']
+            dict_edges[(lt.getElement(path,i)['vertexA'],lt.getElement(path,i)['vertexB'])]=round(dist,2)
+            G.add_edge(lt.getElement(path,i)['vertexA'],lt.getElement(path,i)['vertexB'])
+            dist_total+=dist
+            lt.addFirst(path_new,[lt.getElement(path,i)['vertexA'],dist])
+        lt.addLast(path_new,[lt.getElement(path,0)['vertexB'],0])
+        
+        return True, dist_menor_ini, dist_total, dist_menor_dest, lt.size(path_new), cont_trans, path_new,G,dict_edges
+    else:
+        return False,0, 0, 0, 0,0,0,0,0
 
 def getReq5():
     pass
@@ -223,6 +357,13 @@ def compareroutes(route1, route2):
         return 1
     else:
         return -1
+
+def cmpByCode(movie1, movie2):
+
+    if movie1>movie2:
+        return 0
+    else:
+        return 1
 
 #Funciones de Tiempo
 

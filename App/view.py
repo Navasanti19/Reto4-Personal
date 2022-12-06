@@ -22,7 +22,10 @@
 import os
 import config as cf
 import sys
+import threading
 import controller
+import networkx as nx
+import matplotlib.pyplot as plt
 from DISClib.ADT import list as lt
 assert cf
 
@@ -38,8 +41,14 @@ operación solicitada
 
 def printMenu():
     print("Bienvenido")
-    print("1- Cargar información en el catálogo")
-    print("2- ")
+    print("0- Cargar información de las rutas")
+    print("1- Buscar camino posible entre dos estaciones")
+    print("2- Buscar camino con menos paradas entre dos estaciones")
+    print("3- Reconocer los componentes conectados")
+    print("4- Planear el camino con distancia mínima entre dos puntos")
+    print("5- Informar estaciones alcanzables desde un punto")
+    print("6- Buscar el camino mínimo entreuna estacion y un vecindario")
+    print("7- En contrar un camino circular dede un origen")
 
 # Función crear controlador
 
@@ -77,7 +86,7 @@ def playLoadData():
     elif resp==5:
         archiv='30pct.csv'
     elif resp==6:
-        archiv='50pct.csv'
+        archiv='Ex.csv'
     elif resp==7:
         archiv='80pct.csv'
     elif resp==8:
@@ -85,11 +94,11 @@ def playLoadData():
     
     resp=input(('\nDesea Conocer la memoria utilizada? '))
     resp=castBoolean(resp)
-    vertices,arcos,time,memory= loadData(catalog,archiv,resp)
+    vertices,arcos,cont_trans,time,memory= loadData(catalog,archiv,resp)
     
     os.system('cls')
     print('----------------------------------')
-    print('Loaded Barcelona Transit data properties: ')
+    print('Loaded Barcelona Transit data properties: ') 
     print('Total loaded Vertex: '+str(vertices))
     print('Total loaded Connection: '+str(arcos))
     print('----------------------------------')
@@ -98,16 +107,135 @@ def playLoadData():
     print(f'Memoria Utilizada: {memory}\n')
 
 def playReq1():
-    pass
-
+    os.system('cls')
+    ini= input("Ingrese la estación de inicio: ")
+    dest= input("Ingrese la estación de destino: ")
+    resp,dist,cant_estaciones,cant_transbordo,path,G,dict_edges=controller.getReq1(catalog,ini,dest)
+    if resp:
+        print(f'\nLa distancia total del recorrido es {round(dist,2)}')
+        print(f'El total de estaciones que contiene el camino es: {cant_estaciones}')
+        print(f'El total de transbordos a realiazr es: {cant_transbordo}')
+        print(f'\nLas estaciones a recorrer son:')
+        if cant_estaciones<10:
+            for i in lt.iterator(path): print(f'Estacion {i[0]}, distancia siguiente: {i[1]}')
+            print('\n')
+        else:
+            for i in range(1,6): print(f'Estacion {lt.getElement(path,i)[0]}, distancia siguiente: {lt.getElement(path,i)[1]}')
+            print('...')
+            for i in range(cant_estaciones-5,cant_estaciones+1): print(f'Estacion {lt.getElement(path,i)[0]}, distancia siguiente: {lt.getElement(path,i)[1]}')
+            print('\n')
+        
+        pos = nx.spring_layout(G)
+        options = {
+                    "font_size": 15,
+                    "node_size": 500,
+                    "node_color": "blue",
+                    "edgecolors": "black",
+                    "linewidths": 2,
+                    "width": 2,
+                    }
+        nx.draw_networkx(G,pos,**options)
+        nx.draw_networkx_edge_labels(G,pos,edge_labels=dict_edges)
+        plt.show()
+    else:
+         print(f'\nNo existe un camino entre la estación: {ini} a la estación: {dest}')
+  
 def playReq2():
-    pass
+    os.system('cls')
+    ini= input("Ingrese la estación de inicio: ")
+    dest= input("Ingrese la estación de destino: ")
+    resp,dist,cant_estaciones,cant_transbordo,path,G,dict_edges=controller.getReq2(catalog,ini,dest)
+    if resp:
+        print(f'\nLa distancia total del recorrido es {round(dist,2)}')
+        print(f'El total de estaciones que contiene el camino es: {cant_estaciones}')
+        print(f'El total de transbordos a realiazr es: {cant_transbordo}')
+        print(f'\nLas estaciones a recorrer son:')
+        if cant_estaciones<10:
+            for i in lt.iterator(path): print(f'Estacion {i[0]}, distancia siguiente: {i[1]}')
+            print('\n')
+        else:
+            for i in range(1,6): print(f'Estacion {lt.getElement(path,i)[0]}, distancia siguiente: {lt.getElement(path,i)[1]}')
+            print('...')
+            for i in range(cant_estaciones-5,cant_estaciones+1): print(f'Estacion {lt.getElement(path,i)[0]}, distancia siguiente: {lt.getElement(path,i)[1]}')
+            print('\n')
+        
+        pos = nx.spring_layout(G)
+        options = {
+                    "font_size": 15,
+                    "node_size": 500,
+                    "node_color": "blue",
+                    "edgecolors": "black",
+                    "linewidths": 2,
+                    "width": 2,
+                    }
+        nx.draw_networkx(G,pos,**options)
+        nx.draw_networkx_edge_labels(G,pos,edge_labels=dict_edges)
+        plt.show()
+    else:
+         print(f'\nNo existe un camino entre la estación: {ini} a la estación: {dest}')
 
 def playReq3():
-    pass
+    os.system('cls')
+    cant_conectados,mapa_componentes=controller.getReq3(catalog)
+    print(f'El total de componentes conectados son: {cant_conectados}')
+    if cant_conectados>5:
+        contador=1
+        for i in mapa_componentes:
+            print(f'\nComponente conectado número: {i}')
+            print('Cantidad de elementos conectados en este componente: '+str(mapa_componentes[i]['count']))
+            if mapa_componentes[i]['count']>6:
+                for j in range(1,4):
+                    print('Estación: '+ lt.getElement(mapa_componentes[i]['lista_vertex'],j))
+                print('...')
+                for j in range(lt.size(mapa_componentes[i]['lista_vertex'])+1):
+                    if lt.size(mapa_componentes[i]['lista_vertex'])-j<=3:
+                        print('Estación: '+lt.getElement(mapa_componentes[i]['lista_vertex'],j))
+            else:
+                for j in range(1,4):
+                    print('Estación: '+ lt.getElement(mapa_componentes[i]['lista_vertex'],j))
+            if contador==5:
+                break
+            contador+=1
+    print('\n')
 
 def playReq4():
-    pass
+    os.system('cls')
+    lon_ini= float(input("Ingrese la Longitud geográfica inicial: "))
+    lat_ini= float(input("IIngrese la Latitud geográfica inicial: "))
+    lon_dest= float(input("Ingrese la Longitud geográfica final: "))
+    lat_dest= float(input("Ingrese la Latitud geográfica final: "))
+    resp,dist_ini,dist,dist_dest,cant_estaciones,cant_transbordo,path,G,dict_edges=controller.getReq4(catalog,lon_ini,lat_ini,lon_dest,lat_dest)
+    
+    if resp:
+        print(f'\nLa distancia entre la ubicación inicial y la estación inicial es: {dist_ini}')
+        print(f'La distancia total del recorrido es: {round(dist,2)}')
+        print(f'La distancia entre la ubicación destino y la estación destino es: {dist_dest}')
+        print(f'El total de estaciones que contiene el camino es: {cant_estaciones}')
+        print(f'El total de transbordos a realiazr es: {cant_transbordo}')
+        print(f'\nLas estaciones a recorrer son:')
+        if cant_estaciones<10:
+            for i in lt.iterator(path): print(f'Estacion {i[0]}, distancia siguiente: {i[1]}')
+            print('\n')
+        else:
+            for i in range(1,6): print(f'Estacion {lt.getElement(path,i)[0]}, distancia siguiente: {lt.getElement(path,i)[1]}')
+            print('...')
+            for i in range(cant_estaciones-5,cant_estaciones+1): print(f'Estacion {lt.getElement(path,i)[0]}, distancia siguiente: {lt.getElement(path,i)[1]}')
+            print('\n')
+        
+        pos = nx.spring_layout(G)
+        options = {
+                    "font_size": 15,
+                    "node_size": 500,
+                    "node_color": "blue",
+                    "edgecolors": "black",
+                    "linewidths": 2,
+                    "width": 2,
+                    }
+        nx.draw_networkx(G,pos,**options)
+        nx.draw_networkx_edge_labels(G,pos,edge_labels=dict_edges)
+        plt.show()
+    else:
+         print(f'\nNo existe un camino entre la ubicación: [{lon_ini},{lat_ini}] a la ubicación: [{lon_dest},{lat_dest}]')
 
 def playReq5():
    pass
@@ -135,30 +263,40 @@ def castBoolean(value):
 """
 Menu principal
 """
-while True:
-    printMenu()
-    inputs = input('Seleccione una opción para continuar\n')
-    if int(inputs[0]) == 0:
-        print("Cargando información de los archivos ....")
-        catalog = newController()
-        playLoadData()
-        
-    elif int(inputs[0])==1:
-        playReq1()
-    elif int(inputs[0])==2:
-        playReq2()
-    elif int(inputs[0])==3:
-        playReq3()
-    elif int(inputs[0])==4:
-        playReq4()
-    elif int(inputs[0])==5:
-        playReq5()
-    elif int(inputs[0])==6:
-        playReq6()
-    elif int(inputs[0])==7:
-        playReq7()
-    elif int(inputs[0])==8:
-        playReq8() 
-    else:
-        sys.exit(0)
 
+catalog = newController()
+
+def thread_cycle():
+    while True:
+        printMenu()
+        inputs = input('Seleccione una opción para continuar\n')
+        if int(inputs[0]) == 0:
+            print("Cargando información de los archivos ....")
+            
+            playLoadData()
+            
+            
+        elif int(inputs[0])==1:
+            playReq1()
+        elif int(inputs[0])==2:
+            playReq2()
+        elif int(inputs[0])==3:
+            playReq3()
+        elif int(inputs[0])==4:
+            playReq4()
+        elif int(inputs[0])==5:
+            playReq5()
+        elif int(inputs[0])==6:
+            playReq6()
+        elif int(inputs[0])==7:
+            playReq7()
+        elif int(inputs[0])==8:
+            playReq8() 
+        else:
+            sys.exit(0)
+
+if __name__ == "__main__":
+    threading.stack_size(67108864)  # 64MB stack
+    sys.setrecursionlimit(2 ** 20)
+    thread = threading.Thread(target=thread_cycle)
+    thread.start()

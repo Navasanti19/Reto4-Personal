@@ -61,23 +61,27 @@ def loadData(control,archiv, memory = False):
     catalog = control['model']
     loadEstaciones(catalog,archiv)
     loadRutas(catalog,archiv)
-    
-    model.addTransbordo(catalog)
+
+    cont_trans=model.addTransbordo(catalog)
 
     vertices=model.totalStops(catalog)
     arcos=model.totalConnections(catalog)
     
     stop_time = getTime()
     delta_time = deltaTime(stop_time, start_time)
+
+    #nx.draw_networkx(catalog['G'])
+    #plt.show()
+
     if memory:
         stop_memory = getMemory()
         tracemalloc.stop()
         stop_time = getTime()
         delta_memory = deltaMemory(stop_memory, start_memory)
-        return vertices, arcos, delta_time, delta_memory
+        return vertices, arcos,cont_trans, delta_time, delta_memory
 
     else:
-        return vertices, arcos, delta_time,None
+        return vertices, arcos,cont_trans, delta_time,None
 
 def loadEstaciones(catalog,archiv):
     booksfile = cf.data_dir + 'bus_stops_bcn-utf8-'+archiv
@@ -97,19 +101,21 @@ def loadRutas(catalog,archiv):
 
 # Funciones de consulta sobre el catálogo
 
+def getReq1(control,ini,dest):
+    resp=model.getReq1(control['model'],ini,dest)
+    return resp
 
+def getReq2(control,ini,dest):
+    resp=model.getReq2(control['model'],ini,dest)
+    return resp
 
-def getReq1():
-    pass
+def getReq3(control):
+    resp=model.getReq3(control['model'])
+    return resp
 
-def getReq2():
-    pass
-
-def getReq3():
-    pass
-
-def getReq4():
-    pass
+def getReq4(control,lon_ini,lat_ini,lon_dest,lat_dest):
+    resp=model.getReq4(control['model'],lon_ini,lat_ini,lon_dest,lat_dest)
+    return resp
 
 def getReq5():
     pass
