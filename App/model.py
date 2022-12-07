@@ -41,6 +41,7 @@ from DISClib.Algorithms.Graphs import scc
 from DISClib.Algorithms.Graphs import dijsktra as djk
 from DISClib.Algorithms.Graphs import dfs
 from DISClib.Algorithms.Graphs import bfs
+from DISClib.Algorithms.Graphs import cycles as cy
 from DISClib.Algorithms.Sorting import shellsort as sa
 from DISClib.Algorithms.Sorting import mergesort as mer
 from DISClib.Utils import error as error
@@ -320,17 +321,129 @@ def getReq4(analyzer,lon_ini,lat_ini, lon_dest,lat_dest):
     else:
         return False,0, 0, 0, 0,0,0,0,0
 
-def getReq5():
-    pass
+def getReq5(analyzer,ini,num):
+    G=nx.Graph()
+    
+    analyzer['search']=djk.Dijkstra(analyzer['grafo'],ini)
+    
+    lst_adj=gr.adjacents(analyzer['grafo'],ini)
+    lst_new=lt.newList('ARRAY_LIST')
 
-def getReq6():
-    pass
+    info=mp.get(analyzer['stops'],ini)
+    info=me.getValue(info)
+    lt.addLast(lst_new,[ini,info['Longitude'],info['Latitude'],0])
+    for i in lt.iterator(lst_adj):
+        if 'T-' not in i:
+            info=mp.get(analyzer['stops'],i)
+            info=me.getValue(info)
+            lt.addLast(lst_new,[i,info['Longitude'],info['Latitude'],djk.distTo(analyzer['search'],i)])
+            G.add_node(i)
+        else:
+            lt.addLast(lst_new,[i,'transbordo','transbordo',0])
+            G.add_node(i)
+        if i!=ini:
+            G.add_edge(ini,i)
 
-def getReq7():
-    pass
+    if num>0:
+        for i in range(1,num+1):
+            nuevo_ini=lt.getElement(lst_new,i)[0]
+            lst_adj_new=gr.adjacents(analyzer['grafo'],nuevo_ini)
+            
+            for j in lt.iterator(lst_adj_new):
+                if 'T-' not in j:
+                    info=mp.get(analyzer['stops'],j)
+                    info=me.getValue(info)
+                    if lt.isPresent(lst_new,[j,info['Longitude'],info['Latitude'],djk.distTo(analyzer['search'],j)])==0:
+                        G.add_node(j)
+                        lt.addLast(lst_new, [j,info['Longitude'],info['Latitude'],djk.distTo(analyzer['search'],j)])
+                else:
+                    if lt.isPresent(lst_new,[j,'transbordo','transbordo',0])==0:
+                        G.add_node(j)
+                        lt.addLast(lst_new, [j,'transbordo','transbordo',0])
+                G.add_edge(nuevo_ini,j)
+    
+    return lst_new,G
 
-def getReq8():
-    pass
+def getReq6(analyzer,ini,barrio):
+    G=nx.Graph()
+    cont_trans=0
+    dist_total=0
+    dict_edges={}
+    
+    lista_barrio=lt.newList('ARRAY_LIST')
+    for i in lt.iterator(analyzer['vertices']):
+        if barrio in i['Neighborhood_Name']:
+            lt.addLast(lista_barrio,i)
+
+    path=lt.newList('ARRAY_LIST')
+    try:
+        analyzer['search']=djk.Dijkstra(analyzer['grafo'],ini)
+
+    
+        dist_menor_dest=999999999
+        for i in lt.iterator(lista_barrio):
+            exist= djk.hasPathTo(analyzer['search'], formatVertex(i))
+            if exist:
+                path_probable= djk.pathTo(analyzer['search'],formatVertex(i))
+                distance=djk.distTo(analyzer['search'],formatVertex(i))
+                if distance<dist_menor_dest:
+                    dist_menor_dest=distance
+                    path=path_probable
+    except:
+        pass
+    
+    
+    
+    path_new=lt.newList('ARRAY_LIST')
+    if lt.size(path)>0:
+        
+        for i in range(1,lt.size(path)+1):
+            if not G.has_node(lt.getElement(path,i)['vertexA']):
+                G.add_node(lt.getElement(path,i)['vertexA'])
+                G.add_node(lt.getElement(path,i)['vertexB'])
+            else:
+                G.add_node(lt.getElement(path,i)['vertexB'])
+            
+            if 'T-' in lt.getElement(path,i)['vertexA']:
+                cont_trans+=1
+
+            dist=gr.getEdge(analyzer['grafo'],lt.getElement(path,i)['vertexA'],lt.getElement(path,i)['vertexB'])['weight']
+            dict_edges[(lt.getElement(path,i)['vertexA'],lt.getElement(path,i)['vertexB'])]=round(dist,2)
+            G.add_edge(lt.getElement(path,i)['vertexA'],lt.getElement(path,i)['vertexB'])
+            dist_total+=dist
+            
+            if mp.contains(analyzer['stops'],lt.getElement(path,i)['vertexA']):
+                barrio_vertex=mp.get(analyzer['stops'],lt.getElement(path,i)['vertexA'])
+                barrio_vertex=me.getValue(barrio_vertex)
+                lt.addFirst(path_new,[lt.getElement(path,i)['vertexA'],dist,barrio_vertex['Neighborhood_Name']])
+            else:
+                lt.addFirst(path_new,[lt.getElement(path,i)['vertexA'],dist,'Transbordo'])
+        if mp.contains(analyzer['stops'],lt.getElement(path,0)['vertexB']):
+            barrio_vertex=mp.get(analyzer['stops'],lt.getElement(path,0)['vertexB'])
+            barrio_vertex=me.getValue(barrio_vertex)
+            lt.addLast(path_new,[lt.getElement(path,0)['vertexB'],0,barrio_vertex['Neighborhood_Name']])
+        else:
+            lt.addLast(path_new,[lt.getElement(path,0)['vertexB'],0,'Transbordo'])
+        
+        return True, dist_total, lt.size(path_new), cont_trans, path_new,G,dict_edges
+    else:
+        return False,0, 0, 0, 0,0,0,0,0
+
+def getReq7(analyzer,ini):
+    G=nx.DiGraph()
+    cont_trans=0
+    dist_total=0
+    dict_edges={}
+    
+    lst_adj=gr.adjacents(analyzer['grafo'],ini)
+    if lt.size(lst_adj)==1:
+        G.add_node(lt.getElement(lst_adj,1))
+        G.add_node(ini)
+        G.add_edge(lt.getElement(lst_adj,1),ini)
+        #G.add_edge(ini,lt.getElement(lst_adj,1))
+    nx.draw_networkx(G)
+    plt.show()
+
     
 
 # Funciones de comparación
@@ -388,7 +501,7 @@ def formatVertex(service):
     seguido de la ruta.
     """
     name = service['Code'] + '-'
-    name = name + service['Bus_Stop'][6:]
+    name = name + service['Bus_Stop'][4:]
     return name
 
 def formatArco(service):

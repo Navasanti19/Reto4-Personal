@@ -117,14 +117,17 @@ def getReq4(control,lon_ini,lat_ini,lon_dest,lat_dest):
     resp=model.getReq4(control['model'],lon_ini,lat_ini,lon_dest,lat_dest)
     return resp
 
-def getReq5():
-    pass
+def getReq5(control,ini,num):
+    resp=model.getReq5(control['model'],ini,num)
+    return resp
 
-def getReq6():
-    pass
+def getReq6(control,ini,barrio):
+    resp=model.getReq6(control['model'],ini,barrio)
+    return resp
 
-def getReq7():
-    pass
+def getReq7(control,ini):
+    resp=model.getReq7(control['model'],ini)
+    return resp
 
 def getReq8():
     pass

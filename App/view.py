@@ -238,13 +238,70 @@ def playReq4():
          print(f'\nNo existe un camino entre la ubicación: [{lon_ini},{lat_ini}] a la ubicación: [{lon_dest},{lat_dest}]')
 
 def playReq5():
-   pass
+    ini= input("Ingrese la estación de inicio: ")
+    num= int(input("Ingrese el numero de conexiones máximas que desea: "))
+    lst_adj,G=controller.getReq5(catalog,ini,num)
+    
+    print(f'Las estaciones alcanzables desde la estación: {ini} con un máximo de {num} conexiones son:\n\n')
+    if lt.size(lst_adj)<10:
+            for i in lt.iterator(lst_adj): print(f'Estacion: {i[0]}, Longitud: {i[1]}, Latitud: {i[2]}, Distancia: {i[3]}')
+            print('\n')
+    else:
+        for i in range(1,6): print(f'Estacion: {lt.getElement(lst_adj,i)[0]}, Longitud: {lt.getElement(lst_adj,i)[1]}, Latitude: {lt.getElement(lst_adj,i)[2]}, Distancia: {lt.getElement(lst_adj,i)[3]}')
+        print('...')
+        for i in range(lt.size(lst_adj)-5,lt.size(lst_adj)+1): print(f'Estacion: {lt.getElement(lst_adj,i)[0]}, Longitud: {lt.getElement(lst_adj,i)[1]}, Latitude: {lt.getElement(lst_adj,i)[2]}, Distancia: {lt.getElement(lst_adj,i)[3]}')
+        print('\n')
+        
+    pos = nx.spring_layout(G)
+    options = {
+                "font_size": 15,
+                "node_size": 500,
+                "node_color": "blue",
+                "edgecolors": "black",
+                "linewidths": 2,
+                "width": 2,
+                }
+    nx.draw_networkx(G,pos,**options)
+    plt.show()
 
 def playReq6():
-    pass
+    os.system('cls')
+    ini= input("Ingrese la estación de origen: ")
+    barrio= input("Ingrese el bario de destino: ")
+    resp,dist,cant_estaciones,cant_transbordo,path,G,dict_edges=controller.getReq6(catalog,ini,barrio)
+    
+    if resp:
+        print(f'La distancia total del recorrido es: {round(dist,2)}')
+        print(f'El total de estaciones que contiene el camino es: {cant_estaciones}')
+        print(f'El total de transbordos a realizar es: {cant_transbordo}')
+        print(f'\nLas estaciones a recorrer son:')
+        if cant_estaciones<10:
+            for i in lt.iterator(path): print(f'Estacion: {i[0]}, Barrio: {i[2]}, distancia siguiente: {i[1]}')
+            print('\n')
+        else:
+            for i in range(1,6): print(f'Estacion: {lt.getElement(path,i)[0]}, Barrio: {lt.getElement(path,i)[2]}, distancia siguiente: {lt.getElement(path,i)[1]}')
+            print('...')
+            for i in range(cant_estaciones-5,cant_estaciones+1): print(f'Estacion: {lt.getElement(path,i)[0]}, Barrio: {lt.getElement(path,i)[2]}, distancia siguiente: {lt.getElement(path,i)[1]}')
+            print('\n')
+        
+        pos = nx.spring_layout(G)
+        options = {
+                    "font_size": 15,
+                    "node_size": 500,
+                    "node_color": "blue",
+                    "edgecolors": "black",
+                    "linewidths": 2,
+                    "width": 2,
+                    }
+        nx.draw_networkx(G,pos,**options)
+        nx.draw_networkx_edge_labels(G,pos,edge_labels=dict_edges)
+        plt.show()
+    else:
+         print(f'\nNo existe un camino entre la estacion: {ini} al barrio: {barrio}')
 
 def playReq7():
-    pass
+    ini= input("Ingrese la estación de inicio: ")
+    controller.getReq7(catalog,ini)
 
 def playReq8():
     pass
