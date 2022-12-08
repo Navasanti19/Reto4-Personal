@@ -129,9 +129,6 @@ def getReq7(control,ini):
     resp=model.getReq7(control['model'],ini)
     return resp
 
-def getReq8():
-    pass
-
 # Funciones de tiempo
 
 def getTime():

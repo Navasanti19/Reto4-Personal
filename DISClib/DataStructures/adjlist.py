@@ -29,6 +29,7 @@ import config
 from DISClib.ADT import map as map
 from DISClib.ADT import list as lt
 from DISClib.DataStructures import edge as e
+from DISClib.DataStructures import mapentry as me
 from DISClib.Utils import error as error
 assert config
 
@@ -107,8 +108,24 @@ def removeVertex(graph, vertex):
     Raises:
         Exception
     """
-    # TODO
-    pass
+    try:
+        conexiones=map.get(graph['vertices'],vertex)
+        conexiones=me.getValue(conexiones)
+        for i in lt.iterator(conexiones):
+            conexiones2=map.get(graph['vertices'],i['vertexB'])
+            conexiones2=me.getValue(conexiones2)
+            pos=1
+            for j in lt.iterator(conexiones2):
+                if vertex not in j['vertexB']:
+                    pos+=1
+                else:
+                    break
+            lt.deleteElement(conexiones2,pos)
+        
+        map.remove(graph['vertices'],vertex)
+        return graph
+    except Exception as exp:
+        error.reraise(exp, 'ajlist:removevertex')
 
 
 def numVertices(graph):

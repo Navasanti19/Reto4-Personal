@@ -262,7 +262,7 @@ def getReq3(analyzer):
     
     for i in mapa_componentes:
         mer.sort(mapa_componentes[i]['lista_vertex'],cmpByCode)
-        pass    
+       
     mapa_componentes=sorted(mapa_componentes.items(), key=lambda x:x[1]['count'], reverse=True)
     mapa_componentes=dict(mapa_componentes)
     
@@ -430,19 +430,69 @@ def getReq6(analyzer,ini,barrio):
         return False,0, 0, 0, 0,0,0,0,0
 
 def getReq7(analyzer,ini):
-    G=nx.DiGraph()
-    cont_trans=0
-    dist_total=0
+    G=nx.Graph()
+    G.add_node(ini)
+
     dict_edges={}
+    existe_circulo=False
+    dist_total=0
+    path_new=None
+    cont_trans=0
+    cant_estaciones=0
     
     lst_adj=gr.adjacents(analyzer['grafo'],ini)
-    if lt.size(lst_adj)==1:
-        G.add_node(lt.getElement(lst_adj,1))
-        G.add_node(ini)
-        G.add_edge(lt.getElement(lst_adj,1),ini)
-        #G.add_edge(ini,lt.getElement(lst_adj,1))
-    nx.draw_networkx(G)
-    plt.show()
+
+    dict_aux={}
+    for i in lt.iterator(lst_adj):
+        dict_aux[(ini,i)]=gr.getEdge(analyzer['grafo'],ini,i)['weight']
+    
+    gr.removeVertex(analyzer['grafo'],ini) #No sirve xd
+
+    analyzer['search']=djk.Dijkstra(analyzer['grafo'],lt.getElement(lst_adj,1))
+    
+
+    for i in range(2,lt.size(lst_adj)+1):
+
+        vertex_dest=lt.getElement(lst_adj,i)
+        exist=djk.hasPathTo(analyzer['search'],vertex_dest)
+        path_new=lt.newList('ARRAY_LIST')
+        cont_trans=0
+        dist_total=0
+        
+        if exist:
+            existe_circulo=True
+            path= djk.pathTo(analyzer['search'],vertex_dest)
+            for i in range(1,lt.size(path)+1):
+                if not G.has_node(lt.getElement(path,i)['vertexA']):
+                    G.add_node(lt.getElement(path,i)['vertexA'])
+                    G.add_node(lt.getElement(path,i)['vertexB'])
+                else:
+                    G.add_node(lt.getElement(path,i)['vertexB'])
+                
+                if 'T-' in lt.getElement(path,i)['vertexA']:
+                    cont_trans+=1
+
+                dist=gr.getEdge(analyzer['grafo'],lt.getElement(path,i)['vertexA'],lt.getElement(path,i)['vertexB'])['weight']
+                dict_edges[(lt.getElement(path,i)['vertexA'],lt.getElement(path,i)['vertexB'])]=round(dist,2)
+                G.add_edge(lt.getElement(path,i)['vertexA'],lt.getElement(path,i)['vertexB'])
+                dist_total+=dist
+                lt.addFirst(path_new,[lt.getElement(path,i)['vertexA'],dist])
+
+            print(vertex_dest)
+            dist=dict_aux[(ini,vertex_dest)]
+            dict_edges[(ini,vertex_dest)]=round(dist,2)
+            G.add_edge(ini,vertex_dest)
+            G.add_edge(ini,lt.getElement(lst_adj,1))
+            dist_total+=dist
+            lt.addLast(path_new,[lt.getElement(path,0)['vertexB'],0])
+            cant_estaciones=lt.size(path_new)
+            break
+        else:
+            analyzer['search']=djk.Dijkstra(analyzer['grafo'],vertex_dest)
+
+
+    
+    return existe_circulo,G, dist_total, path_new, cont_trans, dict_edges, cant_estaciones
 
     
 

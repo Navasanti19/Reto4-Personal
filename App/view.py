@@ -301,10 +301,38 @@ def playReq6():
 
 def playReq7():
     ini= input("Ingrese la estación de inicio: ")
-    controller.getReq7(catalog,ini)
+    existe,G,dist,path,cont_trans,dict_edges,cant_estaciones=controller.getReq7(catalog,ini)
+    
+    if existe:
+        print(f'Si existe un camino circular desde la estación: {ini}')
+        print(f'La distancia mínima del camino posible es: {dist}')
+        print(f'Hay que realizar {cont_trans} transbordos')
+        print(f'Las estaciones son:\n')
+        if cant_estaciones>10:
+            for i in range(1,6): print(f'Estacion {lt.getElement(path,i)[0]}, distancia siguiente: {lt.getElement(path,i)[1]}')
+            print('...')
+            for i in range(cant_estaciones-5,cant_estaciones+1): print(f'Estacion {lt.getElement(path,i)[0]}, distancia siguiente: {lt.getElement(path,i)[1]}')
+            print('\n')
+        else:
+            for i in lt.iterator(path): print(f'Estacion {i[0]}, distancia siguiente: {i[1]}')
+            print('\n')
+        
+        pos = nx.spring_layout(G)
+        options = {
+                    "font_size": 15,
+                    "node_size": 500,
+                    "node_color": "blue",
+                    "edgecolors": "black",
+                    "linewidths": 2,
+                    "width": 2,
+                    }
+        nx.draw_networkx(G,pos,**options)
+        nx.draw_networkx_edge_labels(G,pos,edge_labels=dict_edges)
+        plt.show()
 
-def playReq8():
-    pass
+    else:
+        print(f'No existe un  camino circular desde la estación: {ini}')
+
 
 # Funciones Auxiliares
 
@@ -347,8 +375,6 @@ def thread_cycle():
             playReq6()
         elif int(inputs[0])==7:
             playReq7()
-        elif int(inputs[0])==8:
-            playReq8() 
         else:
             sys.exit(0)
 
