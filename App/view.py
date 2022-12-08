@@ -110,7 +110,7 @@ def playReq1():
     os.system('cls')
     ini= input("Ingrese la estación de inicio: ")
     dest= input("Ingrese la estación de destino: ")
-    resp,dist,cant_estaciones,cant_transbordo,path,G,dict_edges=controller.getReq1(catalog,ini,dest)
+    resp,dist,cant_estaciones,cant_transbordo,path,G,dict_edges,times=controller.getReq1(catalog,ini,dest)
     if resp:
         print(f'\nLa distancia total del recorrido es {round(dist,2)}')
         print(f'El total de estaciones que contiene el camino es: {cant_estaciones}')
@@ -134,17 +134,19 @@ def playReq1():
                     "linewidths": 2,
                     "width": 2,
                     }
+        print(f'Tiempo de ejecucíon: {times}')
         nx.draw_networkx(G,pos,**options)
         nx.draw_networkx_edge_labels(G,pos,edge_labels=dict_edges)
         plt.show()
     else:
-         print(f'\nNo existe un camino entre la estación: {ini} a la estación: {dest}')
+        print(f'Tiempo de ejecucíon: {times}')
+        print(f'\nNo existe un camino entre la estación: {ini} a la estación: {dest}')
   
 def playReq2():
     os.system('cls')
     ini= input("Ingrese la estación de inicio: ")
     dest= input("Ingrese la estación de destino: ")
-    resp,dist,cant_estaciones,cant_transbordo,path,G,dict_edges=controller.getReq2(catalog,ini,dest)
+    resp,dist,cant_estaciones,cant_transbordo,path,G,dict_edges,times=controller.getReq2(catalog,ini,dest)
     if resp:
         print(f'\nLa distancia total del recorrido es {round(dist,2)}')
         print(f'El total de estaciones que contiene el camino es: {cant_estaciones}')
@@ -168,15 +170,17 @@ def playReq2():
                     "linewidths": 2,
                     "width": 2,
                     }
+        print(f'Tiempo de ejecucíon: {times}')
         nx.draw_networkx(G,pos,**options)
         nx.draw_networkx_edge_labels(G,pos,edge_labels=dict_edges)
         plt.show()
     else:
-         print(f'\nNo existe un camino entre la estación: {ini} a la estación: {dest}')
+        print(f'Tiempo de ejecucíon: {times}')
+        print(f'\nNo existe un camino entre la estación: {ini} a la estación: {dest}')
 
 def playReq3():
     os.system('cls')
-    cant_conectados,mapa_componentes=controller.getReq3(catalog)
+    cant_conectados,mapa_componentes,times=controller.getReq3(catalog)
     print(f'El total de componentes conectados son: {cant_conectados}')
     if cant_conectados>5:
         contador=1
@@ -196,15 +200,16 @@ def playReq3():
             if contador==5:
                 break
             contador+=1
+    print(f'Tiempo de ejecucíon: {times}')
     print('\n')
 
 def playReq4():
     os.system('cls')
     lon_ini= float(input("Ingrese la Longitud geográfica inicial: "))
-    lat_ini= float(input("IIngrese la Latitud geográfica inicial: "))
+    lat_ini= float(input("Ingrese la Latitud geográfica inicial: "))
     lon_dest= float(input("Ingrese la Longitud geográfica final: "))
     lat_dest= float(input("Ingrese la Latitud geográfica final: "))
-    resp,dist_ini,dist,dist_dest,cant_estaciones,cant_transbordo,path,G,dict_edges=controller.getReq4(catalog,lon_ini,lat_ini,lon_dest,lat_dest)
+    resp,dist_ini,dist,dist_dest,cant_estaciones,cant_transbordo,path,G,dict_edges,times=controller.getReq4(catalog,lon_ini,lat_ini,lon_dest,lat_dest)
     
     if resp:
         print(f'\nLa distancia entre la ubicación inicial y la estación inicial es: {dist_ini}')
@@ -231,16 +236,19 @@ def playReq4():
                     "linewidths": 2,
                     "width": 2,
                     }
+
+        print(f'Tiempo de ejecucíon: {times}')
         nx.draw_networkx(G,pos,**options)
         nx.draw_networkx_edge_labels(G,pos,edge_labels=dict_edges)
         plt.show()
     else:
-         print(f'\nNo existe un camino entre la ubicación: [{lon_ini},{lat_ini}] a la ubicación: [{lon_dest},{lat_dest}]')
+        print(f'Tiempo de ejecucíon: {times}')
+        print(f'\nNo existe un camino entre la ubicación: [{lon_ini},{lat_ini}] a la ubicación: [{lon_dest},{lat_dest}]')
 
 def playReq5():
     ini= input("Ingrese la estación de inicio: ")
     num= int(input("Ingrese el numero de conexiones máximas que desea: "))
-    lst_adj,G=controller.getReq5(catalog,ini,num)
+    lst_adj,G,times=controller.getReq5(catalog,ini,num)
     
     print(f'Las estaciones alcanzables desde la estación: {ini} con un máximo de {num} conexiones son:\n\n')
     if lt.size(lst_adj)<10:
@@ -261,6 +269,7 @@ def playReq5():
                 "linewidths": 2,
                 "width": 2,
                 }
+    print(f'Tiempo de ejecucíon: {times}')
     nx.draw_networkx(G,pos,**options)
     plt.show()
 
@@ -268,7 +277,7 @@ def playReq6():
     os.system('cls')
     ini= input("Ingrese la estación de origen: ")
     barrio= input("Ingrese el bario de destino: ")
-    resp,dist,cant_estaciones,cant_transbordo,path,G,dict_edges=controller.getReq6(catalog,ini,barrio)
+    resp,dist,cant_estaciones,cant_transbordo,path,G,dict_edges,times=controller.getReq6(catalog,ini,barrio)
     
     if resp:
         print(f'La distancia total del recorrido es: {round(dist,2)}')
@@ -293,15 +302,17 @@ def playReq6():
                     "linewidths": 2,
                     "width": 2,
                     }
+        print(f'Tiempo de ejecucíon: {times}')
         nx.draw_networkx(G,pos,**options)
         nx.draw_networkx_edge_labels(G,pos,edge_labels=dict_edges)
         plt.show()
     else:
-         print(f'\nNo existe un camino entre la estacion: {ini} al barrio: {barrio}')
+        print(f'Tiempo de ejecucíon: {times}')
+        print(f'\nNo existe un camino entre la estacion: {ini} al barrio: {barrio}')
 
 def playReq7():
     ini= input("Ingrese la estación de inicio: ")
-    existe,G,dist,path,cont_trans,dict_edges,cant_estaciones=controller.getReq7(catalog,ini)
+    existe,G,dist,path,cont_trans,dict_edges,cant_estaciones,times=controller.getReq7(catalog,ini)
     
     if existe:
         print(f'Si existe un camino circular desde la estación: {ini}')
@@ -326,11 +337,17 @@ def playReq7():
                     "linewidths": 2,
                     "width": 2,
                     }
+
+        print(f'Tiempo de ejecucíon: {times}')
+
+        
+
         nx.draw_networkx(G,pos,**options)
         nx.draw_networkx_edge_labels(G,pos,edge_labels=dict_edges)
         plt.show()
 
     else:
+        print(f'Tiempo de ejecucíon: {times}')
         print(f'No existe un  camino circular desde la estación: {ini}')
 
 

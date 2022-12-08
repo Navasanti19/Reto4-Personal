@@ -177,6 +177,7 @@ def totalConnections(analyzer):
 
 
 def getReq1(analyzer,ini,dest):
+    start_time=getTime()
     G=nx.Graph()
     cont_trans=0
     dist_total=0
@@ -203,12 +204,17 @@ def getReq1(analyzer,ini,dest):
             dist_total+=dist
             lt.addFirst(path_new,[lt.getElement(path,i+1),dist])
         lt.addLast(path_new,[lt.getElement(path,1),0])
+        end_time=getTime()
+        times=deltaTime(start_time,end_time)
         
-        return True, dist_total, lt.size(path), cont_trans, path_new,G,dict_edges
+        return True, dist_total, lt.size(path), cont_trans, path_new,G,dict_edges,round(times,3)
     else:
-        return False,0, 0, 0, 0,0,0
+        end_time=getTime()
+        times=deltaTime(start_time,end_time)
+        return False,0, 0, 0, 0,0,0,round(times,3)
 
 def getReq2 (analyzer,ini,dest):
+    start_time=getTime()
     G=nx.Graph()
     cont_trans=0
     dist_total=0
@@ -235,14 +241,20 @@ def getReq2 (analyzer,ini,dest):
             dist_total+=dist
             lt.addFirst(path_new,[lt.getElement(path,i+1),dist])
         lt.addLast(path_new,[lt.getElement(path,1),0])
+        end_time=getTime()
+        times=deltaTime(start_time,end_time)
         
-        return True, dist_total, lt.size(path), cont_trans, path_new,G,dict_edges
+        return True, dist_total, lt.size(path), cont_trans, path_new,G,dict_edges,round(times,3)
     else:
-        return False,0, 0, 0, 0,0,0
+        end_time=getTime()
+        times=deltaTime(start_time,end_time)
+        return False,0, 0, 0, 0,0,0,round(times,3)
 
 def getReq3(analyzer):
+    start_time=getTime()
     analyzer['components'] = scc.KosarajuSCC(analyzer['grafo'])
     cant_conectados=scc.connectedComponents(analyzer['components'])
+
     mapa_vertices= analyzer['components']['idscc']
     mapa_componentes={}
     for i in lt.iterator(analyzer['vertices']):
@@ -266,9 +278,13 @@ def getReq3(analyzer):
     mapa_componentes=sorted(mapa_componentes.items(), key=lambda x:x[1]['count'], reverse=True)
     mapa_componentes=dict(mapa_componentes)
     
-    return cant_conectados, mapa_componentes
+    end_time=getTime()
+    times=deltaTime(start_time,end_time)
+
+    return cant_conectados, mapa_componentes,round(times,3)
 
 def getReq4(analyzer,lon_ini,lat_ini, lon_dest,lat_dest):
+    start_time=getTime()
     G=nx.Graph()
     cont_trans=0
     dist_total=0
@@ -316,12 +332,18 @@ def getReq4(analyzer,lon_ini,lat_ini, lon_dest,lat_dest):
             dist_total+=dist
             lt.addFirst(path_new,[lt.getElement(path,i)['vertexA'],dist])
         lt.addLast(path_new,[lt.getElement(path,0)['vertexB'],0])
+
+        end_time=getTime()
+        times=deltaTime(start_time,end_time)
         
-        return True, dist_menor_ini, dist_total, dist_menor_dest, lt.size(path_new), cont_trans, path_new,G,dict_edges
+        return True, dist_menor_ini, dist_total, dist_menor_dest, lt.size(path_new), cont_trans, path_new,G,dict_edges,round(times,3)
     else:
-        return False,0, 0, 0, 0,0,0,0,0
+        end_time=getTime()
+        times=deltaTime(start_time,end_time)
+        return False,0, 0, 0, 0,0,0,0,0,round(times,3)
 
 def getReq5(analyzer,ini,num):
+    start_time=getTime()
     G=nx.Graph()
     
     analyzer['search']=djk.Dijkstra(analyzer['grafo'],ini)
@@ -361,10 +383,13 @@ def getReq5(analyzer,ini,num):
                         G.add_node(j)
                         lt.addLast(lst_new, [j,'transbordo','transbordo',0])
                 G.add_edge(nuevo_ini,j)
+    end_time=getTime()
+    times=deltaTime(start_time,end_time)
     
-    return lst_new,G
+    return lst_new,G,round(times,3)
 
 def getReq6(analyzer,ini,barrio):
+    start_time=getTime()
     G=nx.Graph()
     cont_trans=0
     dist_total=0
@@ -418,18 +443,24 @@ def getReq6(analyzer,ini,barrio):
                 lt.addFirst(path_new,[lt.getElement(path,i)['vertexA'],dist,barrio_vertex['Neighborhood_Name']])
             else:
                 lt.addFirst(path_new,[lt.getElement(path,i)['vertexA'],dist,'Transbordo'])
+                
         if mp.contains(analyzer['stops'],lt.getElement(path,0)['vertexB']):
             barrio_vertex=mp.get(analyzer['stops'],lt.getElement(path,0)['vertexB'])
             barrio_vertex=me.getValue(barrio_vertex)
             lt.addLast(path_new,[lt.getElement(path,0)['vertexB'],0,barrio_vertex['Neighborhood_Name']])
         else:
             lt.addLast(path_new,[lt.getElement(path,0)['vertexB'],0,'Transbordo'])
+        end_time=getTime()
+        times=deltaTime(start_time,end_time)
         
-        return True, dist_total, lt.size(path_new), cont_trans, path_new,G,dict_edges
+        return True, dist_total, lt.size(path_new), cont_trans, path_new,G,dict_edges,round(times,3)
     else:
-        return False,0, 0, 0, 0,0,0,0,0
+        end_time=getTime()
+        times=deltaTime(start_time,end_time)
+        return False,0, 0, 0, 0,0,0,0,0,round(times,3)
 
 def getReq7(analyzer,ini):
+    start_time=getTime()
     G=nx.Graph()
     G.add_node(ini)
 
@@ -490,9 +521,10 @@ def getReq7(analyzer,ini):
         else:
             analyzer['search']=djk.Dijkstra(analyzer['grafo'],vertex_dest)
 
-
+    end_time=getTime()
+    times=deltaTime(start_time,end_time)
     
-    return existe_circulo,G, dist_total, path_new, cont_trans, dict_edges, cant_estaciones
+    return existe_circulo,G, dist_total, path_new, cont_trans, dict_edges, cant_estaciones,round(times,3)
 
     
 
