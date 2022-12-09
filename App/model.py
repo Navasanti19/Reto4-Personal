@@ -182,11 +182,11 @@ def getReq1(analyzer,ini,dest):
     cont_trans=0
     dist_total=0
     dict_edges={}
-    analyzer["search"]=bfs.BreadhtFisrtSearch(analyzer["grafo"], ini)
-    exist= bfs.hasPathTo(analyzer['search'], dest)
+    analyzer["search"]=dfs.DepthFirstSearch(analyzer["grafo"], ini)
+    exist= dfs.hasPathTo(analyzer['search'], dest)
     path_new=lt.newList('ARRAY_LIST')
     if exist:
-        path= bfs.pathTo(analyzer['search'],dest)
+        path= dfs.pathTo(analyzer['search'],dest)
 
         for i in range(1,lt.size(path)):
             if not G.has_node(lt.getElement(path,i)):
@@ -219,11 +219,11 @@ def getReq2 (analyzer,ini,dest):
     cont_trans=0
     dist_total=0
     dict_edges={}
-    analyzer["search"]=dfs.DepthFirstSearch(analyzer["grafo"], ini)
-    exist= dfs.hasPathTo(analyzer['search'], dest)
+    analyzer["search"]=bfs.BreadhtFisrtSearch(analyzer["grafo"], ini)
+    exist= bfs.hasPathTo(analyzer['search'], dest)
     path_new=lt.newList('ARRAY_LIST')
     if exist:
-        path= dfs.pathTo(analyzer['search'],dest)
+        path= bfs.pathTo(analyzer['search'],dest)
 
         for i in range(1,lt.size(path)):
             if not G.has_node(lt.getElement(path,i)):
@@ -443,7 +443,7 @@ def getReq6(analyzer,ini,barrio):
                 lt.addFirst(path_new,[lt.getElement(path,i)['vertexA'],dist,barrio_vertex['Neighborhood_Name']])
             else:
                 lt.addFirst(path_new,[lt.getElement(path,i)['vertexA'],dist,'Transbordo'])
-                
+
         if mp.contains(analyzer['stops'],lt.getElement(path,0)['vertexB']):
             barrio_vertex=mp.get(analyzer['stops'],lt.getElement(path,0)['vertexB'])
             barrio_vertex=me.getValue(barrio_vertex)
@@ -509,7 +509,6 @@ def getReq7(analyzer,ini):
                 dist_total+=dist
                 lt.addFirst(path_new,[lt.getElement(path,i)['vertexA'],dist])
 
-            print(vertex_dest)
             dist=dict_aux[(ini,vertex_dest)]
             dict_edges[(ini,vertex_dest)]=round(dist,2)
             G.add_edge(ini,vertex_dest)
